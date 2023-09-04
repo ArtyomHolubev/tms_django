@@ -1,0 +1,36 @@
+from my_app.models import User, Post, Comment, Like
+#1
+user = User.objects.create(id=1, name='Alex', age=35)
+user = User.objects.create(id=2, name='Ann', age=30)
+user = User.objects.create(id=3, name='Kate', age=25)
+
+#2
+post = Post.objects.create(id=1, title='1st post', description='Hi world', user_id=1)
+post = Post.objects.create(id=2, title='2 post', description='Im Alex', user_id=1)
+post = Post.objects.create(id=3, title='1 post', description='Im Ann', user_id=2)
+
+#3
+comment = Comment.objects.create(id=1, title='1 comment', post_id=1, user_id=2)
+comment = Comment.objects.create(id=2, title='2 comment', post_id=1, user_id=2)
+comment = Comment.objects.create(id=3, title='1 comment', post_id=3, user_id=1)
+comment = Comment.objects.create(id=4, title='2 comment', post_id=3, user_id=1)
+comment = Comment.objects.create(id=5, title='3 comment', post_id=3, user_id=1)
+
+#4
+user_A_x = User.objects.filter(name__istartswith="A", name__endswith="x").first()
+post_A_x= Post.objects.filter(user=user_A_x)
+post_A_x = post_A_x.order_by('title')
+
+#5
+comments_all_data = Comment.objects.values()
+comments_all_data = Comment.objects.get(pk=1).delete()
+
+comment = Comment(id=1, title='new comment', post_id=1, user_id=1)
+comment.save()
+
+#6
+like = Like(id=1, post_id=1, user_id=1)
+like.save()
+
+#7
+

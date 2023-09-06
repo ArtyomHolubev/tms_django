@@ -17,4 +17,7 @@ urlpatterns = [
     path('publisher/<publisher_id>', views.get_publisher_by_id),
     path('store/<store_id>', views.get_store_by_id),
     path('author/<author_id>', views.get_author_by_id),
+    path('three_books', views.get_first_three_books),
+    path('all_books', views.get_all_books_v2),
+    path('books_with_author', views.get_only_books_with_authors),
 ]

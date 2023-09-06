@@ -1,0 +1,32 @@
+<!-- Lesson "Django Templates" -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Books</title>
+    <style>
+    body {
+      background-color: rgba(200, 0, 0, 0.2);
+    }
+    </style>
+</head>
+<body>
+    <h1>Books with authors</h1>
+    <div>
+      <table>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Author</th>
+          </tr>
+        {% for book in books_with_author %}
+              <tr>
+                  <td>{{ book.id }},</td>
+                  <td>{{ book.name }},</td>
+                  <td>{{ book.author }},</td>
+              </tr>>
+        {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

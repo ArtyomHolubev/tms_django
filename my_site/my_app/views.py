@@ -1,4 +1,3 @@
-import dataclasses
 import logging
 import sys
 
@@ -6,6 +5,7 @@ from django.http import HttpResponse, HttpRequest, HttpResponseNotFound
 from my_app.models import Book, Store, Author, Publisher
 from my_app.utils import query_debugger
 from django.db.models import Prefetch, Subquery
+from django.shortcuts import render
 
 logging.basicConfig(
     format="%(asctime)s.%(msecs)03d %(levelname)s "
@@ -19,27 +19,30 @@ django_logger = logging.getLogger('django.db.backends')
 django_logger.setLevel(logging.DEBUG)
 django_logger.addHandler(logging.StreamHandler())
 
+# ---------- Lesson DJANGO ORM 3: SELECT RELATED / PREFETCH RELATED ----------- #
+
 
 @query_debugger(logger)
 def _get_all_books():
     """
-    Lesson 3: Using select_related for ForeignKey
+    Lesson Django ORM 3: Using select_related for ForeignKey
     """
-    # queryset = Book.objects.all()
-    # logger.warning(f"SQL: {str(queryset.query)}")
+    queryset = Book.objects.all()
+    logger.warning(f"SQL: {str(queryset.query)}")
     """
     Один запрос для заполнения всех книг и, выполняя итерацию каждый раз, 
     мы получаем доступ к издателю, который выполняет другой отдельный запрос.
     Давайте изменим запрос с помощью select_related следующим образом и посмотрим, что произойдет.
     """
-    queryset = Book.objects.select_related("publisher")
-    logger.warning(f"SQL: {str(queryset.query)}")
+
+    # queryset = Book.objects.select_related("publisher")
+    # logger.warning(f"SQL: {str(queryset.query)}")
 
     return [
         {
             'id': book.id, 'name': book.name,
             # here the additional SQL query is executed to get a publisher name
-            'publisher': book.publisher.name
+            'publisher': book.publisher.name,
         }
         for book in queryset
     ]
@@ -48,7 +51,7 @@ def _get_all_books():
 @query_debugger(logger)
 def _get_all_stores():
     """
-    Lesson 3: Using prefetch_related for ManyToManyField
+    Lesson Django ORM 3: Using prefetch_related for ManyToManyField
     """
     # queryset = Store.objects.all()
     # logger.warning(f"SQL 1: {str(queryset.query)}")
@@ -73,23 +76,30 @@ def _get_all_stores():
 
 @query_debugger(logger)
 def _get_stores_with_expensive_books():
+    """
+    Lesson Django ORM 3: Using prefetch_related for ManyToManyField
+     with Prefetch object
+    """
     # queryset = Store.objects.prefetch_related('books')
-    # logger.warning(f"SQL 1: {str(queryset.query)}")
-    """
-    Here we need to use additional Prefetch object
-    because in query as *queryset = Store.objects.prefetch_related('books')*
-    ALL books related to the existing Stores will be joined and retrieved,
-    but then we need to filter these Books by the price range, and this
-    will override the first Join
+    # logger.warning(f"SQL: {str(queryset.query)}")
+    # stores = []
+    # for store in queryset:
+    #     # Here we use filter by the Books with specified price range
+    #     # and this overrides the first 'prefetch_related' result,
+    #     # therefore the 12 queries will be executed!
+    #     stores_filtered = store.books.filter(price__range=(250, 300))
+    #     books = [book.name for book in stores_filtered]
+    #     stores.append({'id': store.id, 'name': store.name, 'books': books})
 
-    """
+    # To solve the problem above we need to use special Prefetch
+    # object within the 'prefetch_related' call and specify
+    # the filter by the ManyToMany relation in 'queryset' param:
     queryset = Store.objects.prefetch_related(
         Prefetch(
             'books',
             queryset=Book.objects.filter(price__range=(250, 300))
         )
     )
-
     stores = []
     for store in queryset:
         stores_filtered = store.books.all()
@@ -99,35 +109,16 @@ def _get_stores_with_expensive_books():
     return stores
 
 
-def _get_authors_with_expensive_books():
-
-    queryset = Author.objects.prefetch_related(
-        Prefetch(
-            'books',
-            queryset=Book.objects.filter(price__range=(250, 300))
-        )
-    )
-
-    authors = []
-    for author in queryset:
-        authors_filtered = author.books.all()
-        books = [book.name for book in authors_filtered]
-        authors.append({'id': author.id, 'first_name': author.first_name, 'last_name': author.last_name,
-                        'books': books})
-
-    return authors
-
-
 @query_debugger(logger)
 def _get_all_publishers():
     """
-    prefetch_related is used for 'Reversed ManyToOne relation' as for 'ManyToMany field'
+    Lesson Django ORM 3: Using prefetch_related for Reversed ManyToOne Relation
     """
     # Publisher model doesn't have static 'books' field,
     # but Book model has static 'publisher' field as ForeignKey
     # to the Publisher model. In context of the Publisher
     # model the 'books' is dynamic attribute which provides
-    # Reverse ManyToOne relation to the Books
+    # Reversed ManyToOne relation to the Books
     publishers = Publisher.objects.prefetch_related('books')
 
     publishers_with_books = []
@@ -139,6 +130,33 @@ def _get_all_publishers():
 
     return publishers_with_books
 
+
+# ENDPOINTS
+def hello(request: HttpRequest) -> HttpResponse:
+    return HttpResponse(f"Hello World!")
+
+
+def get_all_books(request: HttpRequest) -> HttpResponse:
+    books_list = _get_all_books()
+    return HttpResponse(f"All Books from Stores:\n {books_list}")
+
+
+def get_all_stores(request: HttpRequest) -> HttpResponse:
+    stores_list = _get_all_stores()
+    return HttpResponse(f"All Stores:\n {stores_list}")
+
+
+def get_stores_with_expensive_books(request: HttpRequest) -> HttpResponse:
+    stores_list = _get_stores_with_expensive_books()
+    return HttpResponse(f"Stores with expensive books:\n {stores_list}")
+
+
+def get_all_publishers(request: HttpRequest) -> HttpResponse:
+    pubs = _get_all_publishers()
+    return HttpResponse(f"All Publishers:\n {pubs}")
+
+
+# ---------- Lesson DJANGO ORM 4: SUB-QUERIES ----------- #
 
 @query_debugger(django_logger)
 def _get_publishers_with_expensive_books():
@@ -160,37 +178,14 @@ def _get_publishers_with_expensive_books():
     return [item for item in publishers_with_expensive_books.values()]
 
 
-
-# ENDPOINTS
-def get_all_books(request: HttpRequest) -> HttpResponse:
-    books_list = _get_all_books()
-    return HttpResponse(f"All Books from Stores:\n {books_list}")
-
-
-def get_all_stores(request: HttpRequest) -> HttpResponse:
-    stores_list = _get_all_stores()
-    return HttpResponse(f"All Stores:\n {stores_list}")
-
-
-def get_stores_with_expensive_books(request: HttpRequest) -> HttpResponse:
-    stores_list = _get_stores_with_expensive_books()
-    return HttpResponse(f"Stores with expensive books:\n {stores_list}")
-
-
-def get_all_publishers(request: HttpRequest) -> HttpResponse:
-    pubs = _get_all_publishers()
-    return HttpResponse(f"All Publishers:\n {pubs}")
-
-
 def get_publishers_with_expensive_books(request: HttpRequest) -> HttpResponse:
     authors = _get_publishers_with_expensive_books()
     return HttpResponse(f"Publishers with expensive books:\n {authors}")
 
 
+# ---------- Lesson DJANGO VIEWS ----------- #
+
 def get_book_by_id(request: HttpRequest, book_id: int) -> HttpResponse:
-    # found = Book.objects.filter(id=book_id)
-    # book = found.first()
-    # if book:
     if not (book := Book.objects.filter(id=book_id).first()):
         return HttpResponseNotFound(
             f'<h2>Book by id {book_id} not found</h2>'
@@ -204,11 +199,25 @@ def get_book_by_id(request: HttpRequest, book_id: int) -> HttpResponse:
     )
 
 
-def hello(request: HttpRequest) -> HttpResponse:
-    return HttpResponse(f"Hello World!")
+def _get_authors_with_expensive_books():
 
+    queryset = Author.objects.prefetch_related(
+        Prefetch(
+            'books',
+            queryset=Book.objects.filter(price__range=(250, 300))
+        )
+    )
 
-# HOMEWORK
+    authors = []
+    for author in queryset:
+        authors_filtered = author.books.all()
+        books = [book.name for book in authors_filtered]
+        authors.append({'id': author.id, 'first_name': author.first_name, 'last_name': author.last_name,
+                        'books': books})
+
+    return authors
+
+# ---------- Lesson DJANGO VIEWS: HOMEWORK ----------- #
 def get_expensive_books(request: HttpRequest) -> HttpResponse:
     expensive_books = Book.objects.filter(price__gte=250)
     expensive_books = "<h3><p>".join([str(a) for a in expensive_books])
@@ -264,4 +273,76 @@ def get_author_by_id(request: HttpRequest, author_id: int) -> HttpResponse:
     return HttpResponse(
         f"<h1>Found author by id {author_id}: {author}</h1>"
     )
+
+
+# ---------- Lesson DJANGO TEMPLATES ----------- #
+
+def hello_v2(request: HttpRequest) -> HttpResponse:
+    """
+    Lesson "Django Templates"
+    """
+    return render(request, "index.html")
+
+
+def get_first_three_books(request: HttpRequest) -> HttpResponse:
+    """
+    Lesson "Django Templates"
+    """
+    keys = ('book1', 'book2', 'book3')
+    not_found = 'Not Found'
+
+    match _get_all_books()[:3]:
+        case book1, book2, book3:
+            context = dict(zip(keys, (book1, book2, book3)))
+        case book1, book2:
+            context = dict(zip(keys, (book1, book2, not_found)))
+        case book1, *_:
+            context = dict(zip(keys, (book1, not_found, not_found)))
+        case _:
+            context = dict.fromkeys(keys, not_found)
+
+    return render(
+        request,
+        "books1.html",
+        context=context
+    )
+
+
+def get_all_books_v2(request: HttpRequest) -> HttpResponse:
+    """
+    Lesson "Django Templates"
+    """
+    books_list = _get_all_books()
+
+    return render(
+        request,
+        "books2.html",
+        context={
+            'books': books_list
+        }
+    )
+
+
+# ---------- Lesson DJANGO TEMPLATES: HOMEWORK ----------- #
+
+@query_debugger(logger)
+def _get_only_books_with_authors():
+    queryset = Book.objects.prefetch_related(
+        Prefetch(
+            'authors',
+            queryset=Author.objects.filter()
+        )
+    )
+    books = []
+    for book in queryset:
+        books_filtered = book.authors.all()
+        author = [author.first_name for author in books_filtered]
+        books.append({'id': book.id, 'name': book.name, 'author': author})
+
+    return books
+
+
+def get_only_books_with_authors(request: HttpRequest) -> HttpResponse:
+    books_with_author = _get_only_books_with_authors()
+    return render(request, "books3.html", context={"books_with_author": books_with_author})
 

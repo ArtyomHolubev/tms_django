@@ -2,10 +2,11 @@ import logging
 import sys
 
 from django.http import HttpResponse, HttpRequest, HttpResponseNotFound
-from my_app.models import Book, Store, Author, Publisher
+from my_app.models import Book, Store, Author, Publisher, User
 from my_app.utils import query_debugger
 from django.db.models import Prefetch, Subquery
 from django.shortcuts import render
+from my_app.forms import UserForm, PublisherForm, BookForm
 
 logging.basicConfig(
     format="%(asctime)s.%(msecs)03d %(levelname)s "
@@ -336,8 +337,9 @@ def _get_only_books_with_authors():
     books = []
     for book in queryset:
         books_filtered = book.authors.all()
-        author = [author.first_name for author in books_filtered]
-        books.append({'id': book.id, 'name': book.name, 'author': author})
+        if books_filtered: # фильтр чтобы выводились только книги с авторами
+            author = ", ".join([author.first_name for author in books_filtered])  #джоин для того чтобы убрать квадратные скобки листа
+            books.append({'id': book.id, 'name': book.name, 'author': author})
 
     return books
 
@@ -346,3 +348,97 @@ def get_only_books_with_authors(request: HttpRequest) -> HttpResponse:
     books_with_author = _get_only_books_with_authors()
     return render(request, "books3.html", context={"books_with_author": books_with_author})
 
+
+def get_user_form(request: HttpRequest) -> HttpResponse:
+    form = UserForm()
+    return render(request, "user_form.html", context={"form": form})
+
+
+def get_publisher_form(request: HttpRequest) -> HttpResponse:
+    form = PublisherForm()
+    return render(request, "publisher_form.html", context={"form": form})
+
+
+def get_book_form(request: HttpRequest) -> HttpResponse:
+    form = BookForm()
+    return render(request, "book_form.html", context={"form": form})
+
+
+def _add_user(user_dict: dict):
+    return User.objects.create(
+        name=user_dict.get('name') or "Artsiom",
+        age=user_dict.get('age') or 27,
+        gender=user_dict.get('gender') or 'male',
+        nationality=user_dict.get('nationality') or 'belarus',
+    )
+
+
+def add_user(request: HttpRequest) -> HttpResponse:
+    rq_data = request.POST
+    user_data = {
+        "name": rq_data.get("name"),
+        "age": rq_data.get("age"),
+        "gender": rq_data.get("gender"),
+        "nationality": rq_data.get("nationality")
+    }
+    user = _add_user(user_data)
+
+    return HttpResponse(f"User: {user}")
+
+
+def _add_publisher(publisher_dict: dict):
+    return Publisher.objects.create(
+        name=publisher_dict.get('name') or "default_bulisher",
+    )
+
+
+def add_publisher(request: HttpRequest) -> HttpResponse:
+    rq_data = request.POST
+    publisher_data = {
+        "name": rq_data.get("name")
+    }
+
+    if publisher_data.get("name") in [str(p) for p in Publisher.objects.all()]:
+        return HttpResponse(f"Publisher with name {publisher_data.get('name')} already exist!")
+
+    publisher = _add_publisher(publisher_data)
+    return HttpResponse(f"Publisher: {publisher} created!")
+
+
+def _add_book(book_dict: dict):
+    return Book.objects.create(
+        name=book_dict.get('name') or "default_name",
+        price=book_dict.get('price') or 0,
+        publisher_id=book_dict.get('publisher_id') or 0,
+    )
+
+
+def add_book(request: HttpRequest) -> HttpResponse:
+    rq_data = request.POST
+    publisher_data = {
+        "publisher": rq_data.get("publisher")
+    }
+
+    if publisher_data.get("publisher") in [str(p) for p in Publisher.objects.all()]:
+        publisher = Publisher.objects.get(name=publisher_data.get('publisher'))
+        publisher_id = publisher.pk
+        book_data = {
+            "name": rq_data.get("name"),
+            "price": rq_data.get("price"),
+            "publisher_id": publisher_id
+        }
+        book = _add_book(book_data)
+        return HttpResponse(f"Book with name {book_data.get('name')} price {book_data.get('price')} and"
+                            f" publisher {publisher_data.get('publisher')} created!")
+
+    publisher = Publisher.objects.create(name=publisher_data.get('publisher'))
+    publisher_id = publisher.pk
+    book_data = {
+        "name": rq_data.get("name"),
+        "price": rq_data.get("price"),
+        "publisher_id": publisher_id
+    }
+    book = _add_book(book_data)
+    return HttpResponse(f"Created new publisher {publisher_data.get('publisher')} "
+                        f"Also created book with name {book_data.get('name')} price {book_data.get('price')} and"
+                        f" publisher {publisher_data.get('publisher')}!")

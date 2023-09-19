@@ -96,7 +96,7 @@ class BookSerializer_POST(serializers.ModelSerializer):
 
     class Meta:
         model = Book
-        fields = ['id', 'name', 'price', 'publisher_id', 'authors']
+        fields = ['id', 'name', 'price', 'publisher_id']
 
     def create(self, validated_data):
 

@@ -40,3 +40,20 @@ resp = requests.post(url=url, json=[pub_new_data])
 #                 5
 #             ]
 #         }
+
+#
+# {
+#     "id": 112,
+#     "name": "NewAnyBook",
+#     "price": 200000,
+#     "publisher": {"id": 12, "name": "Publisher12"},
+#     "authors": {"id": 20, "first_name": "vasya" , "last_name": "vasya", "email": "vasya"}
+# }
+
+
+{
+    "id": 112,
+    "name": "NewAnyBook",
+    "price": 200000,
+    "publisher_id": 2
+}

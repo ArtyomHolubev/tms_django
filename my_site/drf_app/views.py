@@ -4,7 +4,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from drf_app.models import Book, Publisher, Store, Author
 from drf_app.serializers import (
-    BookSerializer,
+    BookSerializer_GET,
+    BookSerializer_POST,
     PublisherSerializer,
     StoreSerializer,
     AuthorSerializer
@@ -17,7 +18,7 @@ Lesson Django REST framework: part 1
 
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.select_related('publisher').prefetch_related('authors').order_by('-price')
-    serializer_class = BookSerializer
+    serializer_class = BookSerializer_GET
     permission_classes = [permissions.AllowAny]
 
 
@@ -104,6 +105,7 @@ def publisher_by_id(request, publisher_id: int) -> Response:
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+
 @api_view(['GET', 'POST'])
 def book_by_id(request, book_id: int) -> Response:
     book = Book.objects.filter(id=book_id).first()
@@ -115,7 +117,7 @@ def book_by_id(request, book_id: int) -> Response:
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            serializer = BookSerializer(book)
+            serializer = BookSerializer_GET(book)
             return Response(serializer.data)
 
         case 'POST':
@@ -124,7 +126,7 @@ def book_by_id(request, book_id: int) -> Response:
                     f"Book with ID {book_id} already exists!",
                     status=status.HTTP_403_FORBIDDEN
                 )
-            serializer = BookSerializer(data=request.data)
+            serializer = BookSerializer_POST(data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response(

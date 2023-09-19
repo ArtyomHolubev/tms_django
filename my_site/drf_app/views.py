@@ -113,7 +113,7 @@ def book_by_id(request, book_id: int) -> Response:
         case 'GET':
             if not book:
                 return Response(
-                    f"Publisher with id {book_id} not found!",
+                    f"Book with id {book_id} not found!",
                     status=status.HTTP_404_NOT_FOUND
                 )
 
@@ -130,7 +130,7 @@ def book_by_id(request, book_id: int) -> Response:
             if serializer.is_valid():
                 serializer.save()
                 return Response(
-                    f"Publisher created: id = {book_id}, data = {request.data}",
+                    f"Book created: id = {book_id}, data = {request.data}",
                 )
 
             return Response(

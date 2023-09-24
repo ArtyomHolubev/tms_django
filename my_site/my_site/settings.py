@@ -22,6 +22,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-ubg@-8%7b_oj$t%$(l4*2w-#g=xh4n61^(2mnv5(_192s(3h29'
 
+DEFAULT_FROM_EMAIL = "wtftem206@gmail.com"
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -40,7 +43,9 @@ INSTALLED_APPS = [
     'my_app.apps.MyAppConfig',
     'django_tables2',
     'rest_framework',
-    'drf_app'
+    'drf_app',
+    'djoser',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [

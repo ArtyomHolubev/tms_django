@@ -34,3 +34,34 @@ like.save()
 
 #7
 
+1. Create new Project
+
+django-admin startproject tms_project
+
+2. Start new application
+
+python manage.py startapp drf_app
+
+3. Create migration file
+
+python manage.py makemigrations
+
+4. Make migration
+
+python manage.py migrate
+
+5. Create super user (admin)
+
+python manage.py createsuperuser
+
+6. Run the application
+
+python manage.py runserver 8000
+
+7. Django shell
+
+python manage.py shell
+
+8. Run Command:
+
+python manage.py {command_module_name}

@@ -63,63 +63,43 @@ class PublisherSerializer(serializers.ModelSerializer):
         model = Publisher
         fields = ['id', 'name']
 
-        def create(self, validated_data):
-            """
-            Create new Book instance
-            """
-            return Publisher.objects.create(**validated_data)
-
 
 class AuthorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Author
         fields = ['id', 'first_name', 'last_name', 'email']
 
-    def create(self, validated_data):
-        """
-        Create new Book instance
-        """
-        return Author.objects.create(**validated_data)
 
+class BookSerializer(serializers.ModelSerializer):
+    """
+    Lesson Django REST framework: part 2
+    """
 
-class BookSerializer_GET(serializers.ModelSerializer):
+    publisher = PublisherSerializer()
+    authors = AuthorSerializer(many=True)
 
     class Meta:
         model = Book
         fields = ['id', 'name', 'price', 'publisher', 'authors']
 
-
-class BookSerializer_POST(serializers.ModelSerializer):
-
-    # publisher = PublisherSerializer()
-    # authors = AuthorSerializer(many=True)
-
-    class Meta:
-        model = Book
-        fields = ['id', 'name', 'price', 'publisher_id']
-
     def create(self, validated_data):
-
-        # pub_serializer = PublisherSerializer(data=validated_data["publisher"])
-        # auth_serializer = AuthorSerializer(data=validated_data["author"])
-        # if pub_serializer.is_valid():
-        #     new_pub = pub_serializer.save()
-        # if auth_serializer.is_valid():
-        #     new_auth = auth_serializer.save()
-
+        """
+        Create new Book instance
+        """
         return Book.objects.create(**validated_data)
 
-    # def update(self, instance, validated_data):
-    #     """
-    #     Update and return an existing `Book` instance, given the validated data.
-    #     """
-    #     instance.name = validated_data.get('name', instance.name)
-    #     instance.price = validated_data.get('price', instance.price)
-    #     instance.publisher = validated_data.get('publisher', instance.publisher)
-    #     if authors := validated_data.get('authors'):
-    #         instance.authors.add(authors)
-    #     instance.save()
-    #     return instance
+    def update(self, instance, validated_data):
+        """
+        Update and return an existing `Book` instance, given the validated data.
+        """
+        instance.name = validated_data.get('name', instance.name)
+        instance.price = validated_data.get('price', instance.price)
+        instance.publisher = validated_data.get('publisher', instance.publisher)
+        if authors := validated_data.get('authors'):
+            instance.authors.add(authors)
+        instance.save()
+        return instance
+
 
 class StoreSerializer(serializers.ModelSerializer):
     class Meta:

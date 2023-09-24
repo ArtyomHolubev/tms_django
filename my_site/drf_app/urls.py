@@ -20,6 +20,7 @@ urlpatterns = [
     path('publishers/', views.publishers_list),
     path('publishers/<int:publisher_id>', views.publisher_by_id),
     path('books/<int:book_id>', views.book_by_id),
+
 ]
 
 urlpatterns += router.urls

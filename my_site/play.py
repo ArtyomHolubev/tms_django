@@ -30,7 +30,7 @@ url = 'http://127.0.0.1:8000/auth/users/'
 resp = requests.post(url=url, json=pub_new_data)
 
 
-pub_new_data = {'username': 'vasya', 'asdasd123123': 'asd123123'}
+pub_new_data = {'username': 'artem', 'asdasd123123': 'asd123123'}
 url = 'http://127.0.0.1:8000/auth/jwt/create/'
 resp = requests.post(url=url, json=pub_new_data)
 

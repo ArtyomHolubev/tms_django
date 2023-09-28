@@ -7,6 +7,8 @@ from my_app.utils import query_debugger
 from django.db.models import Prefetch, Subquery
 from django.shortcuts import render
 from my_app.forms import UserForm, PublisherForm, BookForm
+from django.views.decorators.cache import cache_page
+from cachetools import TTLCache, cached
 
 logging.basicConfig(
     format="%(asctime)s.%(msecs)03d %(levelname)s "
@@ -22,6 +24,11 @@ django_logger.addHandler(logging.StreamHandler())
 
 # ---------- Lesson DJANGO ORM 3: SELECT RELATED / PREFETCH RELATED ----------- #
 
+
+# _CACHE = TTLCache(
+#     ttl=60*2,
+#     maxsize=10
+# )
 
 @query_debugger(logger)
 def _get_all_books():
@@ -185,13 +192,12 @@ def get_publishers_with_expensive_books(request: HttpRequest) -> HttpResponse:
 
 
 # ---------- Lesson DJANGO VIEWS ----------- #
-
+@cached(cache=TTLCache(ttl=60, maxsize=10))
 def get_book_by_id(request: HttpRequest, book_id: int) -> HttpResponse:
     if not (book := Book.objects.filter(id=book_id).first()):
         return HttpResponseNotFound(
             f'<h2>Book by id {book_id} not found</h2>'
         )
-
     authors = book.authors.all()
     authors = "<h2><p>".join([str(a) for a in authors])
     logger.debug(authors)
@@ -309,6 +315,7 @@ def get_first_three_books(request: HttpRequest) -> HttpResponse:
     )
 
 
+@cache_page(240)
 def get_all_books_v2(request: HttpRequest) -> HttpResponse:
     """
     Lesson "Django Templates"

@@ -9,4 +9,5 @@ urlpatterns = [
     path('drf_app/', include('drf_app.urls')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
+    path("debug/", include("debug_toolbar.urls")),
 ]
